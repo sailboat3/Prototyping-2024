@@ -29,6 +29,8 @@ kotlin {
 
     sourceSets {
         val desktopMain by getting
+        val commonMain by getting
+        val androidMain by getting
 
         androidMain.dependencies {
             implementation(libs.compose.ui)

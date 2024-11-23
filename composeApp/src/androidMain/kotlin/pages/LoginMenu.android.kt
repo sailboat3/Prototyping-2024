@@ -1,7 +1,6 @@
 package pages
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,15 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumble.appyx.components.backstack.BackStack
 import com.bumble.appyx.components.backstack.operation.push
-import androidx.compose.ui.graphics.Color
-import compKey
 import defaultError
-import defaultOnPrimary
 import defaultPrimaryVariant
 import deleteFile
 import getCurrentTheme
@@ -35,75 +32,54 @@ actual fun LoginMenu(
     comp: MutableState<String>
 ) {
     val logo = File("Logo.png")
-    var compDD by remember { mutableStateOf(false) }
     var deleteData by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val tbaMatches = listOf(
-        "2024wabon",
-        "2024wasam",
-        "2024orsal",
-        "2024pncmp",
-        "2024hop"
-
-    )
-    Column {
-//        AsyncImage(
-//            model = logo,//turn into bitmap
-//            contentDescription = "Logo"
-//        )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(
             text = "Login",
-            fontSize = 45.sp,
+            fontSize = 32.sp,
             color = getCurrentTheme().onPrimary,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(8.dp)
         )
         HorizontalDivider(
             color = defaultPrimaryVariant,
-            thickness = 3.dp
+            thickness = 2.dp,
+            modifier = Modifier
+                .padding(8.dp)
         )
-        Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text(text = "Name", color = defaultOnPrimary)
-            OutlinedTextField(
-                value = scoutName.value,
-                onValueChange = {scoutName.value = it},
-                placeholder = { Text("First, Last Name") },
-                shape = RoundedCornerShape(15.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = getCurrentTheme().background,
-                    unfocusedTextColor = getCurrentTheme().onPrimary,
-                    focusedContainerColor = getCurrentTheme().background,
-                    focusedTextColor = getCurrentTheme().onPrimary,
-                    cursorColor = getCurrentTheme().onSecondary,
-                    focusedBorderColor = Color.Cyan,
-                    unfocusedBorderColor = getCurrentTheme().secondary
-                )
-            )
-        }
-
-        HorizontalDivider(
-            color = defaultPrimaryVariant,
+        OutlinedTextField(
+            value = scoutName.value,
+            onValueChange = { scoutName.value = it },
+            placeholder = { Text("First & Last Name") },
+            shape = RoundedCornerShape(8.dp),
+            label = { Text(text = "Name") },
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = getCurrentTheme().background,
+                unfocusedTextColor = getCurrentTheme().onPrimary,
+                focusedContainerColor = getCurrentTheme().background,
+                focusedTextColor = getCurrentTheme().onPrimary,
+                focusedLabelColor = Color.Cyan,
+                cursorColor = getCurrentTheme().onSecondary,
+                focusedBorderColor = Color.Cyan,
+                unfocusedBorderColor = getCurrentTheme().secondary
+            ),
+            modifier = Modifier
+                .padding(8.dp)
         )
-
-        Box(modifier = Modifier.fillMaxWidth(9f/10f).align(Alignment.CenterHorizontally)) {
-            OutlinedButton(
-                onClick = {
-                    if (scoutName.value != "")
-                        backStack.push(RootNode.NavTarget.MainMenu)
-                },
-                border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
-                modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Text(
-                    text = "Submit",
-                    color = getCurrentTheme().onPrimary
-                )
-            }
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
             OutlinedButton(
                 onClick = { deleteData = true },
                 border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
-                modifier = Modifier.align(Alignment.CenterEnd)
+                colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary)
             ) {
                 Text(
                     text = "Delete Data",
@@ -113,9 +89,11 @@ actual fun LoginMenu(
             if (deleteData) {
                 BasicAlertDialog(
                     onDismissRequest = { deleteData = false },
-                    modifier = Modifier.clip(
-                        RoundedCornerShape(5.dp)
-                    ).border(BorderStroke(3.dp, defaultPrimaryVariant), RoundedCornerShape(5.dp))
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(5.dp)
+                        )
+                        .border(BorderStroke(3.dp, defaultPrimaryVariant), RoundedCornerShape(5.dp))
 
                 ) {
                     Column {
@@ -140,6 +118,23 @@ actual fun LoginMenu(
                     }
                 }
             }
+            Spacer(Modifier.padding(8.dp))
+            OutlinedButton(
+                onClick = {
+                    if (scoutName.value != "")
+                        backStack.push(RootNode.NavTarget.MainMenu)
+                },
+                border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary)
+            ) {
+                Text(
+                    text = "Login",
+                    color = getCurrentTheme().onPrimary
+                )
+            }
         }
+
     }
+
+
 }
