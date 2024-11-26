@@ -1,24 +1,32 @@
-# Bear Metal Scouting
+# Bear Metal Scouting (but for prototyping 2024)
 
 ![Bear Metal Logo](composeApp/src/commonMain/resources/bearmetallogo.jpg)
+
 ## Scouting App info
 
-The Bear Metal Scouting App is a multiplatform application for Desktop, Android, and hopefully iOS.
+The Bear Metal Scouting App is a multiplatform application for Desktop, Android, ~~and hopefully iOS~~.
 
+## How to Set up Webhooks
 
-### Multiplatform info 
+1. **Create a Webhook in Discord**
 
-This is a Kotlin Multiplatform project targeting Android, iOS, Desktop.
+- Open Discord and navigate to the server where you want to create the webhook.
+- Click on the server name in the top-left corner to open the server settings.
+- In the server settings, find and click on the "Integrations" tab.
+- Click on "Webhooks".
+- Click on the "Create Webhook" button.
+- Customize the webhook by selecting a channel where it will post scorecards and optionally add a picture. The name of
+  the webhook is dynamically changed in the code.
+- Click the "Copy Webhook URL" button to copy the webhook URL to your clipboard.
 
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
+2. **Integrate the Webhook URL into `matchmenu.kt`**
 
-* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform, 
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+   Open `matchmenu.kt` and replace `YOUR_WEBHOOK_URL` with the webhook URL you copied from Discord.
 
+   ```kotlin
+   val webhook = DiscordWebhook("YOUR_WEBHOOK_URL")
+   ```
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+3. **Done!**
+
+   Now compile and run the app!

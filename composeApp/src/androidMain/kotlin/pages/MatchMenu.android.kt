@@ -1,12 +1,13 @@
 package pages
 
+import DiscordWebhook
+import Scorecard
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -18,6 +19,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +34,20 @@ import nodes.RootNode
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.math.floor
 
+/**
+ * A mutable list of `Scorecard` objects that holds the scorecards for a game or a series of games.
+ *
+ * This list is used to keep track of all the scorecards dynamically,
+ * allowing for additions, deletions, and updates to the scores.
+ *
+ * The data type used is `mutableStateListOf`,
+ * which provides a state-aware observable list that can be used within a Compose UI.
+ *
+ * Each `Scorecard` object in the list represents the scores for a particular game or player,
+ * containing all necessary information related to scoring.
+ */
+val scorecardList = mutableStateListOf<Scorecard>()
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalResourceApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +59,11 @@ actual fun MatchMenu(
     comp: MutableState<String>,
     team: MutableIntState
 ) {
+
+
+    val webhook = DiscordWebhook("YOUR_WEBHOOK_URL")
+
+
     // Mutable Values
     var highGoalValue by remember { mutableStateOf(0) }
     var midGoalValue by remember { mutableStateOf(0) }
@@ -54,17 +75,22 @@ actual fun MatchMenu(
     var motorBonus by remember { mutableStateOf(false) }
 
     // Point Values
-    var pointsFromAssets = (highGoalValue * 5) + (midGoalValue * 3) + (lowGoalValue * 2)
-    var interest = (
-            floor((highGoalValue + midGoalValue + lowGoalValue).toDouble() / 3) * 20 +
-            floor((highGoalValue + midGoalValue + lowGoalValue).toDouble() / 12) * 100
+    val pointsFromAssets = (highGoalValue * 5) + (midGoalValue * 3) + (lowGoalValue * 2)
+    val interest = (
+            floor((highGoalValue + midGoalValue + lowGoalValue).toDouble() / 3) * 20 + floor((highGoalValue + midGoalValue + lowGoalValue).toDouble() / 12) * 100
             )
-    var totalPointsFromAssets = pointsFromAssets + interest
-    var totalPointsFromBonuses = (mountingBonus.compareTo(false) + sizeBonus.compareTo(false) + weightBonus.compareTo(false) + motorBonus.compareTo(false)) * 5
+    val totalPointsFromAssets = pointsFromAssets + interest
+    val totalPointsFromBonuses =
+        (mountingBonus.compareTo(false) + sizeBonus.compareTo(false) + weightBonus.compareTo(false) + motorBonus.compareTo(
+            false
+        )) * 5
     var penaltyPoints by remember { mutableStateOf(0) }
-    var totalPoints = totalPointsFromAssets + totalPointsFromBonuses - penaltyPoints
+    val totalPoints = totalPointsFromAssets + totalPointsFromBonuses - penaltyPoints
 
-    var scrollState = rememberScrollState() // Avoid resetting the scroll upon recomposition
+    val scrollState = rememberScrollState() // Avoid resetting the scroll upon recomposition
+
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier.verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -95,67 +121,70 @@ actual fun MatchMenu(
                 .padding(8.dp)
         )
 
-
         var expanded by remember { mutableStateOf(false) }
-        var selectedOption by remember { mutableStateOf("Select a Team") }
-        val options = listOf("a", "b", "c")
-        var mTextFieldSize by remember { mutableStateOf(Size.Zero)}
+        val options = listOf("BlackRock", "Vanguard", "Fidelity", "JPMorgan", "State Street")
+        var selectedOption by remember { mutableStateOf("") }
+        var textFieldSize by remember { mutableStateOf(Size.Zero) }
         val icon = if (expanded)
             Icons.Filled.KeyboardArrowUp
         else
             Icons.Filled.KeyboardArrowDown
 
-
-        OutlinedTextField(
-            value = selectedOption,
-            onValueChange = { selectedOption = it },
-            readOnly = true,
-            modifier = Modifier
-                .onGloballyPositioned { coordinates ->
-                    mTextFieldSize = coordinates.size.toSize()
-                },
-            label = {Text("Team")},
-            trailingIcon = {
-                Icon(icon,"contentDescription",
-                    Modifier.clickable { expanded = !expanded })
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = getCurrentTheme().background,
-                unfocusedTextColor = getCurrentTheme().onPrimary,
-                focusedContainerColor = getCurrentTheme().background,
-                focusedTextColor = getCurrentTheme().onPrimary,
-                focusedLabelColor = getCurrentTheme().onSecondary,
-                cursorColor = getCurrentTheme().onSecondary,
-                focusedBorderColor = getCurrentTheme().onSecondary,
-                unfocusedBorderColor = getCurrentTheme().secondary,
-            )
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(with(LocalDensity.current){mTextFieldSize.width.toDp()})
-        ) {
-            options.forEachIndexed { index, item ->
-                DropdownMenuItem(text = {
-                    Text(text = item)
-                },
-                    onClick = {
-                        expanded = false
-                        selectedOption = item
+        Column(Modifier.padding(20.dp)) {
+            OutlinedTextField(
+                value = selectedOption,
+                onValueChange = { selectedOption = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldSize = coordinates.size.toSize()
                     },
-                    colors = MenuItemColors(
-                        textColor = getCurrentTheme().onPrimary,
-                        leadingIconColor = getCurrentTheme().onPrimary,
-                        trailingIconColor = getCurrentTheme().onPrimary,
-                        disabledTextColor = getCurrentTheme().secondary,
-                        disabledLeadingIconColor = getCurrentTheme().secondary,
-                        disabledTrailingIconColor = getCurrentTheme().secondary,
+                label = { Text("Team Name") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = getCurrentTheme().background,
+                    unfocusedTextColor = getCurrentTheme().onPrimary,
+                    focusedContainerColor = getCurrentTheme().background,
+                    focusedTextColor = getCurrentTheme().onPrimary,
+                    focusedLabelColor = Color.Cyan,
+                    cursorColor = getCurrentTheme().onSecondary,
+                    focusedBorderColor = Color.Cyan,
+                    unfocusedBorderColor = getCurrentTheme().secondary,
+                ),
+                singleLine = true,
+                trailingIcon = {
+                    Icon(
+                        icon, "contentDescription",
+                        Modifier.clickable(
+                            interactionSource = MutableInteractionSource(),
+                            indication = null
+                        ) { expanded = !expanded }
                     )
-                )
+
+                }
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                    .border(BorderStroke(1.dp, defaultPrimaryVariant)) // Adding white border
+            ) {
+                options.forEach { label ->
+                    DropdownMenuItem(
+                        onClick = {
+                            selectedOption = label
+                            expanded = false
+                        },
+                        text = {
+                            Text(
+                                text = label,
+                                color = getCurrentTheme().onPrimary
+                            )
+                        }
+                    )
+                }
             }
         }
-
 
         HorizontalDivider(
             color = defaultPrimaryVariant,
@@ -184,10 +213,19 @@ actual fun MatchMenu(
             text = "Bonus Points",
             color = getCurrentTheme().onPrimary
         )
-        Column() {
-            BonusCheckbox("Mounted and Unmounted in under 3 minutes", mountingBonus, onValueChange = { newValue -> mountingBonus = newValue })
-            BonusCheckbox("Fits in a 16\"x16\"x14\" Box", sizeBonus, onValueChange = { newValue -> sizeBonus = newValue })
-            BonusCheckbox("Weighs Less Than 7.5 Pounds", weightBonus, onValueChange = { newValue -> weightBonus = newValue })
+        Column {
+            BonusCheckbox(
+                "Mounted and Unmounted in under 3 minutes",
+                mountingBonus,
+                onValueChange = { newValue -> mountingBonus = newValue })
+            BonusCheckbox(
+                "Fits in a 16\"x16\"x14\" Box",
+                sizeBonus,
+                onValueChange = { newValue -> sizeBonus = newValue })
+            BonusCheckbox(
+                "Weighs Less Than 7.5 Pounds",
+                weightBonus,
+                onValueChange = { newValue -> weightBonus = newValue })
             BonusCheckbox("Uses 0-1 Motors", motorBonus, onValueChange = { newValue -> motorBonus = newValue })
         }
 
@@ -205,12 +243,12 @@ actual fun MatchMenu(
         )
 
         AdjustableField("Penalty Amount", penaltyPoints, onValueChange = { newValue -> penaltyPoints = newValue })
-        Row() {
+        Row {
             Button(
                 border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
                 modifier = Modifier.padding(4.dp),
-                onClick = { penaltyPoints = (penaltyPoints- 5).takeIf { it >= 0 } ?: penaltyPoints }
+                onClick = { penaltyPoints = (penaltyPoints - 5).takeIf { it >= 0 } ?: penaltyPoints }
             ) {
                 Text("-5")
             }
@@ -242,7 +280,7 @@ actual fun MatchMenu(
                 border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
                 modifier = Modifier.padding(4.dp),
-                onClick = { penaltyPoints += 20 }
+                onClick = { penaltyPoints += 30 }
             ) {
                 Text("+30")
             }
@@ -252,7 +290,7 @@ actual fun MatchMenu(
             text = "Quick Add Penalties",
             color = getCurrentTheme().onPrimary
         )
-        Row() {
+        Row {
             Button(
                 border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
@@ -278,7 +316,7 @@ actual fun MatchMenu(
                 Text("Human Interference")
             }
         }
-        Row() {
+        Row {
             Button(
                 border = BorderStroke(color = defaultPrimaryVariant, width = 2.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
@@ -329,7 +367,31 @@ actual fun MatchMenu(
             border = BorderStroke(color = Color.Cyan, width = 2.dp),
             colors = ButtonDefaults.buttonColors(containerColor = getCurrentTheme().primary),
             modifier = Modifier.padding(4.dp),
-            onClick = { backStack.push(RootNode.NavTarget.MainMenu) }
+            onClick = {
+                if (selectedOption != "") {
+                    val newScorecard = Scorecard(
+                        teamName = selectedOption,
+                        matchNumber = 1,
+                        totalScore = totalPoints,
+                        penaltyScore = penaltyPoints,
+                        bonusScore = totalPointsFromBonuses,
+                        highGoalAmount = highGoalValue,
+                        midGoalAmount = midGoalValue,
+                        lowGoalAmount = lowGoalValue
+                    )
+                    scorecardList.add(newScorecard)
+
+                    webhook.sendToWebhook(newScorecard)
+
+                    backStack.push(RootNode.NavTarget.MainMenu)
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Please select a team",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         ) {
             Text(
                 text = "Submit Score",
